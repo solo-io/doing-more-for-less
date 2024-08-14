@@ -1,0 +1,1 @@
+This repository contains scripts and output data relating to the "Doing More for Less" blog published on https://solo.io/blog/.

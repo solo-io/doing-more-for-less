@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vegeta1
+  namespace: ns-4
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vegeta1
+  name: vegeta1
+  namespace: ns-4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vegeta1
+  template:
+    metadata:
+      labels:
+        app: vegeta1
+    spec:
+      serviceAccountName: vegeta1
+      containers:
+      - name: vegeta
+        image: ably77/vegeta:0.1
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        # guaranteed qos
+        resources:
+          requests:
+            cpu: 500m
+            memory: 300Mi
+          limits:
+            cpu: 500m
+            memory: 300Mi
+        env:
+        - name: APP_URL
+          value: "http://tier-1-app-a.ns-4.svc.cluster.local:8080"
+        - name: GAMMA_APP_URL
+          value: "http://tier-1-app.ns-4.svc.cluster.local:8080/v1"
+        - name: REQUESTS_PER_SECOND
+          value: "150"
+        - name: DURATION
+          value: "10m"
+        - name: CONNECTIONS
+          value: "100"
+        - name: MAX_CONNECTIONS
+          value: "100"
+        - name: WORKERS
+          value: "100"
+        - name: MAX_WORKERS
+          value: "100"
+        args: 
+          - "-c"
+          - 'sleep 5; for run in $(seq 1 100000); do echo "GET ${APP_URL}" | vegeta attack -dns-ttl=0 -keepalive -http2=true -rate ${REQUESTS_PER_SECOND}/1s -duration=${DURATION} -connections=${CONNECTIONS} -max-connections=${MAX_CONNECTIONS} -workers=${WORKERS} -max-workers=${MAX_WORKERS} | tee results.bin | vegeta report -type=text; done'
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vegeta2
+  namespace: ns-4
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vegeta2
+  name: vegeta2
+  namespace: ns-4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vegeta2
+  template:
+    metadata:
+      labels:
+        app: vegeta2
+    spec:
+      serviceAccountName: vegeta2
+      containers:
+      - name: vegeta
+        image: ably77/vegeta:0.1
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh"]
+        # guaranteed qos
+        resources:
+          requests:
+            cpu: 500m
+            memory: 300Mi
+          limits:
+            cpu: 500m
+            memory: 300Mi
+        env:
+        - name: APP_URL
+          value: "http://tier-1-app-b.ns-4.svc.cluster.local:8080"
+        - name: GAMMA_APP_URL
+          value: "http://tier-1-app.ns-4.svc.cluster.local:8080/v2"
+        - name: REQUESTS_PER_SECOND
+          value: "150"
+        - name: DURATION
+          value: "10m"
+        - name: CONNECTIONS
+          value: "100"
+        - name: MAX_CONNECTIONS
+          value: "100"
+        - name: WORKERS
+          value: "100"
+        - name: MAX_WORKERS
+          value: "100"
+        args: 
+          - "-c"
+          - 'sleep 5; for run in $(seq 1 100000); do echo "GET ${APP_URL}" | vegeta attack -dns-ttl=0 -keepalive -http2=true -rate ${REQUESTS_PER_SECOND}/1s -duration=${DURATION} -connections=${CONNECTIONS} -max-connections=${MAX_CONNECTIONS} -workers=${WORKERS} -max-workers=${MAX_WORKERS} | tee results.bin | vegeta report -type=text; done'
